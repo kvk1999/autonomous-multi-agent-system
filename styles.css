@@ -19,6 +19,20 @@ button, input, textarea, select, option, label, th, td, p, span, div {
     color: var(--text) !important;
 }
 
+/* Toast Notifications */
+[data-baseweb="toast"], .stToast, .stToastContainer {
+    background-color: #000 !important;
+    color: #f8f8f8 !important;
+    border: 1px solid #111 !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65) !important;
+}
+
+[data-baseweb="toast"] [data-testid="stMarkdownContainer"],
+[data-baseweb="toast"] button,
+[data-baseweb="toast"] svg {
+    color: #f8f8f8 !important;
+}
+
 code, pre, .stCode, .stCode * {
     color: var(--text) !important;
     background-color: var(--card) !important;
@@ -84,10 +98,10 @@ button[data-baseweb="tab"][aria-selected="true"] {
 }
 [data-baseweb="tab-list"] {
     gap: 6px !important;
-    background: var(--bg-subtle) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 10px !important;
-    padding: 4px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 4px 0 !important;
 }
 
 /* KPI Cards */
@@ -230,3 +244,4 @@ button[data-baseweb="tab"][aria-selected="true"] {
     background-color: var(--bg-subtle) !important;
     border-right: 1px solid var(--border) !important;
 }
+

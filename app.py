@@ -1,5 +1,8 @@
 # app.py
 # pyrefly: ignore [missing-import]
+import os
+import time
+
 import streamlit as st
 import pandas as pd
 # pyrefly: ignore [missing-import]
@@ -8,12 +11,25 @@ import numpy as np
 import plotly.express as px
 # pyrefly: ignore [missing-import]
 import plotly.graph_objects as go
-import time
-import os
+
 
 from acceleration_engine import haversine_distance_gpu, optimize_routes, run_benchmark
+
+# Concrete metrics (hardcoded from benchmark_concrete_metrics.py)
+# GPU timing is measured with torch tensor broadcasting Haversine distance matrix.
+# Note: CPU baseline is the naive nested-loop implementation; GPU numbers are the demo-critical ones.
+CONCRETE_BENCHMARK = {
+    "1000": {"gpu_time_s": 0.0226, "cpu_time_s": 8.6488},
+    "2000": {"gpu_time_s": 0.0462, "cpu_time_s": 35.5370},
+    "5000": {"gpu_time_s": 0.3606, "cpu_time_s": None},
+    "10000": {"gpu_time_s": 1.5369, "cpu_time_s": None},
+}
+
 from gcp_connector import GCPConnector
 from gemini_agent import DispatchAgent
+
+
+
 
 # 1. Page Configuration
 st.set_page_config(
@@ -33,22 +49,24 @@ def toggle_theme():
 IS_DARK = st.session_state.theme == "dark"
 
 # 3. CSS Design System Variables (dynamic light/dark values)
-bg_val = "#09090b" if IS_DARK else "#ffffff"
-bg_subtle_val = "#0c0c0f" if IS_DARK else "#f9fafb"
-card_val = "#0c0c0f" if IS_DARK else "#ffffff"
-card_hover_val = "#131316" if IS_DARK else "#f4f4f5"
-border_val = "#1e1e24" if IS_DARK else "#e4e4e7"
-border_subtle_val = "#16161a" if IS_DARK else "#f0f0f2"
-text_val = "#fafafa" if IS_DARK else "#09090b"
-text_muted_val = "#71717a"
-text_dim_val = "#52525b" if IS_DARK else "#a1a1aa"
+bg_val = "#000000" if IS_DARK else "#ffffff"
+bg_subtle_val = "#050505" if IS_DARK else "#f9fafb"
+card_val = "#0b0b0d" if IS_DARK else "#ffffff"
+card_hover_val = "#121214" if IS_DARK else "#f4f4f5"
+border_val = "#111114" if IS_DARK else "#e4e4e7"
+border_subtle_val = "#141416" if IS_DARK else "#f0f0f2"
+text_val = "#f8f8f8" if IS_DARK else "#000000"
+text_muted_val = "rgba(248,248,248,0.85)" if IS_DARK else "#4b5563"
+text_dim_val = "rgba(248,248,248,0.72)" if IS_DARK else "#6b7280"
 shadow_val = "none" if IS_DARK else "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)"
 green_val = "#22c55e" if IS_DARK else "#16a34a"
-green_muted_val = "rgba(34,197,94,0.12)" if IS_DARK else "rgba(22,163,74,0.08)"
+green_muted_val = "rgba(34,197,94,0.22)" if IS_DARK else "rgba(22,163,74,0.08)"
 red_val = "#ef4444" if IS_DARK else "#dc2626"
 red_muted_val = "rgba(239,68,68,0.12)" if IS_DARK else "rgba(220,38,38,0.08)"
 amber_val = "#f59e0b" if IS_DARK else "#d97706"
 amber_muted_val = "rgba(245,158,11,0.12)" if IS_DARK else "rgba(217,119,6,0.08)"
+accent_color = "#22c55e" if IS_DARK else "#2563eb"
+accent_muted_color = "rgba(34,197,94,0.18)" if IS_DARK else "#1d4ed8"
 
 # Read raw styles
 with open("styles.css", "r") as f:
@@ -67,8 +85,8 @@ st.markdown(f"""
     --text: {text_val};
     --text-muted: {text_muted_val};
     --text-dim: {text_dim_val};
-    --accent: #2563eb;
-    --accent-muted: #1d4ed8;
+    --accent: {accent_color};
+    --accent-muted: {accent_muted_color};
     --green: {green_val};
     --green-muted: {green_muted_val};
     --red: {red_val};
@@ -402,13 +420,19 @@ with tab_benchmarks:
         st.markdown("### Run Live Profiler")
         st.write("Compare CPU Pandas processing against GPU-accelerated tensor math on your local NVIDIA RTX 3060.")
         
-        bench_nodes = st.multiselect("Dataset sizes (nodes)", [100, 300, 500, 1000, 2000, 5000], default=[100, 300, 500, 1000])
+        bench_size_options = [100, 300, 500, 1000, 2000, 5000]
+        select_all_checkbox = st.checkbox("Select all dataset sizes")
+        selected_bench_options = st.multiselect(
+            "Dataset sizes (nodes)",
+            bench_size_options,
+            default=bench_size_options if select_all_checkbox else [100, 300, 500, 1000],
+        )
+        bench_nodes = bench_size_options if select_all_checkbox else selected_bench_options
         
         if st.button("Execute Scale Benchmark", width="stretch", type="primary"):
             with st.spinner("Profiling calculations..."):
                 bench_results = run_benchmark(bench_nodes)
                 st.session_state.bench_data = bench_results
-                
         if "bench_data" in st.session_state:
             # Display results summary table
             rows = ""
