@@ -15,6 +15,7 @@ import plotly.graph_objects as go
 import torch
 import distance_calculator
 
+
 # Mitigation for WinError 10054 noise when a Streamlit client disconnects mid-callback.
 # Streamlit uses asyncio transports internally on Windows; browser/tab closes can trigger
 # ConnectionResetError while the server is still attempting to finish the callback.

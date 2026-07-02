@@ -6,3 +6,7 @@ torch
 google-genai
 Flask
 gunicorn
+google-cloud-storage
+google-cloud-bigquery
+google-cloud-aiplatform
+pyarrow
