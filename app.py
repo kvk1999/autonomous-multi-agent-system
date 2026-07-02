@@ -14,6 +14,12 @@ import plotly.graph_objects as go
 # pyrefly: ignore [missing-import]
 import torch
 
+# Mitigation for WinError 10054 noise when a Streamlit client disconnects mid-callback.
+# Streamlit uses asyncio transports internally on Windows; browser/tab closes can trigger
+# ConnectionResetError while the server is still attempting to finish the callback.
+import asyncio
+
+
 
 def haversine_np(lat1, lon1, lat2, lon2, radius_km=6371.0):
     lat1 = np.asarray(lat1, dtype=np.float64)
@@ -732,8 +738,13 @@ with tab_insights:
                     "max_retries": int(max_retries),
                     "token_budget": int(token_budget),
                 }
+
                 with st.spinner("Executing decentralized graph with self-healing..."):
-                    result = st.session_state.agent_graph_runner.run(payload)
+                    try:
+                        result = st.session_state.agent_graph_runner.run(payload)
+                    except ConnectionResetError:
+                        st.warning("Client disconnected during graph execution (WinError 10054). Aborting safely.")
+                        st.stop()
 
                 st.success("Graph run completed")
 
@@ -815,12 +826,17 @@ with tab_gemini:
         
         # Get AI response
         with st.spinner("Gemini reading database context..."):
-            ans = agent.query_agent(
-                user_query, 
-                st.session_state.fleet_df, 
-                st.session_state.orders_df, 
-                st.session_state.assignments
-            )
+            try:
+                ans = agent.query_agent(
+                    user_query, 
+                    st.session_state.fleet_df, 
+                    st.session_state.orders_df, 
+                    st.session_state.assignments
+                )
+            except ConnectionResetError:
+                st.warning("Client disconnected during Gemini response (WinError 10054). Aborting safely.")
+                st.stop()
+
             st.session_state.chat_history.append(("AI", ans))
             st.rerun()
 
