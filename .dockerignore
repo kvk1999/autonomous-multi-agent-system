@@ -1,7 +1,6 @@
-__pycache__/
-*.pyc
-.git/
+.venv
+.venv313
+__pycache__
+.git
 .env
-local_data/
-*.pdf
-*.html
+*.pyc

@@ -1,9 +1,9 @@
-.gcloudignore
-.git
-.gitignore
-venv/
-.env
+.venv/
+.venv313/
 __pycache__/
+.git/
+.gitignore
+.env
 *.pyc
-node_modules/
-*.ipynb
+*.png
+*.pdf
