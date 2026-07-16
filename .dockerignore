@@ -2,5 +2,12 @@
 .venv313
 __pycache__
 .git
+.github
 .env
 *.pyc
+*.pyo
+gcs_bucket_simulation
+*.png
+*.jpg
+*.pdf
+*.html
